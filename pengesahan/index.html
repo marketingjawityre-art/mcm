@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengesahan & Penerimaan Sumbangan - MCM</title>
+    
+    <link rel="icon" href="https://i.postimg.cc/7LryVYZ0/image.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .signature-wrapper {
+            position: relative; width: 100%; height: 150px;
+            border: 2px dashed #d1d5db; border-radius: 0.5rem; background-color: #f9fafb;
+        }
+        .signature-pad { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 0.5rem; }
+        
+        /* Loading Spinner */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #059669; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* PDF A4 Styling (Hidden for generation) */
+        #pdf-template-wrapper { display: none; }
+        .pdf-a4 {
+            width: 794px; background: white; padding: 40px;
+            color: #000; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6;
+        }
+        .text-justify-pdf { text-align: justify; }
+        .pdf-ul { list-style-type: disc; padding-left: 40px; margin-bottom: 15px; }
+        .pdf-ul li { margin-bottom: 5px; font-weight: bold; }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-gray-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+            <img src="https://i.postimg.cc/7LryVYZ0/image.png" alt="Logo MCM" crossorigin="anonymous" class="h-10 w-auto object-contain bg-white/20 p-1 rounded">
+            <h1 class="font-bold text-lg leading-tight">Pengesahan Penerimaan<br><span class="text-gray-400 text-sm font-normal">Muslim Care Malaysia</span></h1>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- Info Alert -->
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl mb-8 flex items-start shadow-sm">
+            <i class="fa-solid fa-circle-check text-xl mt-0.5 mr-3"></i>
+            <div>
+                <h3 class="font-bold">Tahniah! Permohonan anda telah diluluskan.</h3>
+                <p class="text-sm mt-1">Sila lengkapkan borang pengesahan penerimaan sumbangan berserta maklumat akaun bank anda di bawah. Dana akan disalurkan setelah borang ini dihantar.</p>
+            </div>
+        </div>
+
+        <div id="form-container" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 class="font-bold text-gray-800 text-lg">Borang Maklumat Bank & Pengesahan</h2>
+                <p class="text-sm text-gray-500 mt-1">Rujukan: <span id="display-ref" class="font-bold text-gray-700">MEMUAT...</span></p>
+            </div>
+            
+            <form id="pengesahan-form" class="p-6 space-y-6">
+                
+                <!-- Bahagian 1: Maklumat Pemohon / Organisasi -->
+                <div>
+                    <h3 class="font-bold text-gray-700 border-b pb-2 mb-4">1. Maklumat Pemohon / Organisasi</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Organisasi / Pemohon</label>
+                            <input type="text" id="input-nama-org" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 uppercase bg-gray-50" required readonly>
+                            <p class="text-xs text-gray-500 mt-1">*Diambil secara automatik dari sistem</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">No. Pendaftaran Organisasi (Jika Ada)</label>
+                            <input type="text" id="input-no-org" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 uppercase" placeholder="Cth: PPM-001-10-123456">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bahagian 2: Maklumat Bank -->
+                <div>
+                    <h3 class="font-bold text-gray-700 border-b pb-2 mb-4">2. Maklumat Akaun Bank</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Bank</label>
+                            <input type="text" id="input-bank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 uppercase" required placeholder="Cth: MAYBANK ISLAMIC">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Akaun Bank</label>
+                            <input type="text" id="input-nama-akaun" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 uppercase" required placeholder="Mesti sama dengan nama pemohon/organisasi">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">No. Akaun Bank</label>
+                            <input type="text" id="input-no-akaun" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" required placeholder="Cth: 162345678901">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bahagian 3: Pengesahan & Tandatangan -->
+                <div>
+                    <h3 class="font-bold text-gray-700 border-b pb-2 mb-4">3. Pengesahan & Pengakuan</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 mb-4 text-justify">
+                        Saya bersetuju dengan terma yang dinyatakan dan akan mengemukakan ringkasan laporan program selewatnya 14 hari (2 minggu) selepas tamat program (jika berkaitan), serta mematuhi Garis Panduan Paparan Jenama MCM. Saya juga mengesahkan bahawa maklumat bank yang diberikan adalah tepat dan benar.
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jawatan / Kapasiti Pemohon</label>
+                            <input type="text" id="input-jawatan" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 uppercase" required placeholder="Cth: PELAJAR / PENGERUSI / INDIVIDU">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tarikh</label>
+                            <input type="date" id="input-tarikh" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50" required readonly>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-end mb-1">
+                                <label class="block text-sm font-semibold text-gray-700">Tandatangan Pemohon</label>
+                                <button type="button" onclick="sigPad.clear()" class="text-xs text-red-600 hover:text-red-800 font-medium"><i class="fa-solid fa-eraser"></i> Padam</button>
+                            </div>
+                            <div class="signature-wrapper">
+                                <canvas id="sig-canvas" class="signature-pad"></canvas>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Cop Organisasi (Pilihan)</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-emerald-500 transition relative h-[150px] flex flex-col items-center justify-center bg-gray-50">
+                                <i class="fa-solid fa-stamp text-3xl text-gray-400 mb-2"></i>
+                                <p class="text-xs text-gray-500">Klik untuk muat naik gambar cop rasmi (.jpg/.png)</p>
+                                <input type="file" id="input-cop" accept="image/png,image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewCop(this)">
+                                <div id="cop-preview-container" class="absolute inset-0 bg-white hidden flex items-center justify-center p-2 rounded-lg border border-emerald-200">
+                                    <img id="cop-preview" src="" class="max-h-full max-w-full object-contain">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-gray-200 flex justify-end">
+                    <button type="button" id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition flex items-center">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> Hantar Pengesahan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="success-screen" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center">
+            <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600">
+                <i class="fa-solid fa-check text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Penerimaan Disahkan</h2>
+            <p class="text-gray-600 mb-6">Terima kasih. Surat Pengesahan Penerimaan berserta maklumat bank anda telah berjaya dijana dan dihantar ke dalam sistem untuk proses penyaluran dana.</p>
+            <button onclick="window.close()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg transition">
+                Tutup Tetingkap
+            </button>
+        </div>
+
+        <!-- Loader Overlay -->
+        <div id="loader-overlay" class="fixed inset-0 bg-white/90 z-50 flex flex-col items-center justify-center hidden">
+            <div class="loader mb-4"></div>
+            <p class="text-emerald-700 font-medium animate-pulse" id="loader-text">Menjana PDF & Mengemas kini pangkalan data...</p>
+        </div>
+    </main>
+
+    <!-- HIDDEN PDF TEMPLATE (Strictly follows provided images) -->
+    <div id="pdf-template-wrapper">
+        <div id="pdf-content" class="pdf-a4">
+            
+            <!-- PAGE 1: SURAT PENGESAHAN -->
+            <div class="flex justify-between items-start mb-10">
+                <img src="https://i.postimg.cc/7LryVYZ0/image.png" alt="MCM Logo" crossorigin="anonymous" style="height: 60px;">
+                <div class="text-right">
+                    <h2 class="font-bold text-sm uppercase">PENGESAHAN DAN PENERIMAAN SUMBANGAN</h2>
+                    <p class="text-xs uppercase">Muslim Care Malaysia Society</p>
+                    <table class="mt-6 text-xs ml-auto">
+                        <tr><td class="pr-4 text-left">Rujukan Kami</td><td>: <span id="pdf-ref" class="font-bold"></span></td></tr>
+                        <tr><td class="pr-4 text-left">Tarikh</td><td>: <span id="pdf-tarikh"></span></td></tr>
+                        <tr><td class="pr-4 text-left">Bersamaan</td><td>: </td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <p class="mb-6 text-justify-pdf">
+                Sila nyatakan penerimaan dan persetujuan anda dengan terma-terma yang terdapat di dalam Borang Maklumat Balas Permohonan Sumbangan dengan menandatangani dan mengembalikan Salinan pendua surat ini (Salinan surat ini boleh juga dihantar melalui e-mel).
+            </p>
+
+            <p class="mb-4 text-justify-pdf">
+                Kami &nbsp;&nbsp; <span id="pdf-nama-org-1" class="font-bold uppercase border-b border-black pb-1 inline-block min-w-[300px] text-center"></span> &nbsp;&nbsp; (nama organisasi/individu) mengakui penerimaan kami kepada surat ini dan bersetuju dengan terma yang dinyatakan dan akan mengemukakan ringkasan laporan program selewatnya 14 hari (2 minggu) selepas tamat program (jika berkaitan), yang mengandungi maklumat seperti berikut;
+            </p>
+
+            <ul class="pdf-ul">
+                <li>Gambaran keseluruhan program</li>
+                <li>Anggaran bilangan penerima manfaat / peserta yang terlibat</li>
+                <li>Aktiviti yang dijalankan</li>
+                <li>Foto dan kapsyen (sekurang-kurangnya 4 keping gambar beresolusi tinggi, di mana MCM akan menggunakan di dalam Laporan Tahunan MCM); dan</li>
+            </ul>
+
+            <p class="mb-4 text-justify-pdf">
+                Kami dengan ini mengesahkan bahawa maklumat berikut berkenaan dengan maklumat bank &nbsp;&nbsp; <span id="pdf-nama-org-2" class="font-bold uppercase border-b border-black pb-1 inline-block min-w-[250px] text-center"></span> &nbsp;&nbsp; [nama organisasi/pemohon] adalah benar;
+            </p>
+
+            <table class="mb-6 font-bold">
+                <tr><td class="pr-4 pb-1">Nama Bank</td><td class="pb-1">: <span id="pdf-bank" class="uppercase font-normal"></span></td></tr>
+                <tr><td class="pr-4 pb-1">Nama Akaun</td><td class="pb-1">: <span id="pdf-nama-akaun" class="uppercase font-normal"></span></td></tr>
+                <tr><td class="pr-4 pb-1">No. Akaun</td><td class="pb-1">: <span id="pdf-no-akaun" class="uppercase font-normal"></span></td></tr>
+                <tr><td class="pr-4 pb-1">No. Pendaftaran Organisasi</td><td class="pb-1">: <span id="pdf-no-org" class="uppercase font-normal"></span></td></tr>
+            </table>
+
+            <p class="mb-12 text-justify-pdf">
+                Kami bersetuju untuk memaklumkan penerimaan dana melalui e-mel (kepada maklumat yang dinyatakan di atas), setelah dana diterima.
+            </p>
+
+            <div class="border-b border-black w-64 mb-2 min-h-[60px] flex items-end relative">
+                <img id="pdf-sig-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="max-h-[80px] max-w-[200px] absolute bottom-0 left-0">
+            </div>
+            
+            <table class="text-sm">
+                <tr><td class="pr-2 pb-1">Nama</td><td>: <span id="pdf-nama-sign" class="uppercase font-bold"></span></td></tr>
+                <tr><td class="pr-2 pb-1">Jawatan</td><td>: <span id="pdf-jawatan" class="uppercase"></span></td></tr>
+                <tr><td class="pr-2 pb-1">Tarikh</td><td>: <span id="pdf-tarikh-sign"></span></td></tr>
+                <tr><td class="pr-2 align-top pt-2">Cop Organisasi</td><td class="pt-2">: 
+                    <div class="inline-block border border-dashed border-gray-300 w-[100px] h-[100px] ml-1 flex items-center justify-center">
+                        <img id="pdf-cop-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="max-w-full max-h-full object-contain">
+                    </div>
+                </td></tr>
+            </table>
+
+            <div class="html2pdf__page-break"></div>
+
+            <!-- PAGE 2: GARIS PANDUAN -->
+            <div class="flex justify-between items-start mb-6 pt-10">
+                <img src="https://i.postimg.cc/7LryVYZ0/image.png" alt="MCM Logo" crossorigin="anonymous" style="height: 40px;">
+                <div class="text-right">
+                    <h2 class="font-bold text-xs uppercase">PENGESAHAN DAN PENERIMAAN SUMBANGAN</h2>
+                    <p class="text-[10px] uppercase">Muslim Care Malaysia Society</p>
+                </div>
+            </div>
+
+            <div class="bg-red-600 text-white text-center font-bold py-1 mb-6 uppercase text-sm">GARIS PANDUAN PAPARAN JENAMA</div>
+            
+            <p class="mb-6 text-justify-pdf">
+                Kami mengucapkan ribuan terima kasih di atas khidmat anda membantu komuniti yang terjejas. Kami memahami anda ingin berkongsi kerja-kerja anda di media sosial atau media cetak. Oleh yang demikian, kami telah menyediakan garis panduan jenama yang mesti dipatuhi dan diberi perhatian sekiranya anda menerima sumbangan atau tajaan kami.
+            </p>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 1: Sentiasa 'tag', 'mention' kami pada siaran media sosial anda</h3>
+                <p>Sila 'tag', 'mention' Muslim Care Malaysia bagi program yang dibiayai.</p>
+                <div class="flex justify-center items-center gap-2 mt-2 font-bold text-lg">
+                    <i class="fa-brands fa-facebook text-blue-600 text-2xl"></i>
+                    <i class="fa-brands fa-instagram text-pink-600 text-2xl"></i>
+                    <i class="fa-brands fa-tiktok text-black text-2xl"></i>
+                    <span class="text-sm ml-2">@muslimcaremalaysiasociety</span>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 2: Menggunakan logo MCM</h3>
+                <p class="text-justify-pdf">Penggunaan logo MCM perlu mendapat kebenaran. Semasa memaparkan logo pada poster, gegantung, sepanduk, plakad, latar belakang, barang bantuan, slaid pembentangan, skrin Zoom/Google Meet/Teams, sila tampilkan bersama tajuk 'Di Sokong Oleh'.</p>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 3: Zon jelas dan saiz minimum</h3>
+                <p class="italic mb-1">Menjaga integrity logo MCM dengan;</p>
+                <ul class="list-[lower-roman] pl-8 space-y-1">
+                    <li>Jauhkan dari unsur-unsur lain disekitarnya. Ruang kosong disekitar logo ini dikenali sebagai 'zon jelas'.</li>
+                    <li>Mengekalkan ukuran minimum logo <span class="text-red-600 font-bold">3 cm</span>.</li>
+                </ul>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 4: Warna</h3>
+                <p class="text-justify-pdf">Warna logo MCM adalah yang ditunjukan di sini. Sekiranya mungkin, versi penuh logo harus digunakan untuk semua bahan komunikasi, termasuk iklan cetak dan televisyen, 'collaterals' dan media elektronik. Sampel berikut merupakan panduan warna logo.</p>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 5: Mengubah saiz</h3>
+                <p class="text-justify-pdf">Semasa mengubah saiz logo, sila pastikan kerterbacaannya tidak terjejas. Berikut merupakan cara yang betul dan cara yang tidak betul dalam mengubah saiz logo MCM. Cara yang betul untuk mengubah saiz logo dengan menyeret sudut.</p>
+            </div>
+
+            <div class="html2pdf__page-break"></div>
+
+            <!-- PAGE 3: GARIS PANDUAN SAMBUNGAN -->
+            <div class="flex justify-between items-start mb-6 pt-10">
+                <img src="https://i.postimg.cc/7LryVYZ0/image.png" alt="MCM Logo" crossorigin="anonymous" style="height: 40px;">
+                <div class="text-right">
+                    <h2 class="font-bold text-xs uppercase">PENGESAHAN DAN PENERIMAAN SUMBANGAN</h2>
+                    <p class="text-[10px] uppercase">Muslim Care Malaysia Society</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="font-bold mb-2">Tindakan No. 6: Berkomunikasi dengan media</h3>
+                <p class="text-justify-pdf">Apabila anda berhubung, bercakap, menghantar berita kepada pihak media, sila pastikan anda menyatakan bahawa program ini <strong>DISOKONG OLEH MUSLIM CARE MALAYSIA</strong>.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 🛑 SILA GANTIKAN URL INI DENGAN WEB APP URL GOOGLE APPS SCRIPT ANDA
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzjZRBiOeFxkc47QYwhCpaxoKg_p-NH0oCrx6AzXmBks6AIntxDeVJTBX0BqR7rbQlq7w/exec';
+
+        let sigPad;
+        let globalRef = "TIADA_RUJUKAN";
+        let globalNama = "";
+        let copBase64 = "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Setup Signature Pad
+            const canvas = document.getElementById('sig-canvas');
+            function resizeCanvas() {
+                const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                if(sigPad) sigPad.clear(); 
+            }
+            window.addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+            sigPad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 0)" });
+
+            // Set Date
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            const displayDate = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+            
+            document.getElementById('input-tarikh').value = dateStr;
+            document.getElementById('pdf-tarikh').textContent = displayDate;
+            document.getElementById('pdf-tarikh-sign').textContent = displayDate;
+
+            // Extract URL Parameters (Expected: ?ref=MCM_XXX&nama=AHMAD)
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.has('ref')) {
+                globalRef = urlParams.get('ref');
+                document.getElementById('display-ref').textContent = globalRef;
+                document.getElementById('pdf-ref').textContent = globalRef;
+            }
+            if(urlParams.has('nama')) {
+                globalNama = urlParams.get('nama');
+                document.getElementById('input-nama-org').value = globalNama;
+            }
+        });
+
+        function previewCop(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    copBase64 = e.target.result;
+                    document.getElementById('cop-preview').src = copBase64;
+                    document.getElementById('cop-preview-container').classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        document.getElementById('btn-submit').addEventListener('click', async () => {
+            const form = document.getElementById('pengesahan-form');
+            if(!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            if(sigPad.isEmpty()) {
+                alert("Sila turunkan tandatangan anda.");
+                return;
+            }
+
+            // Map data to PDF Template
+            const orgName = document.getElementById('input-nama-org').value;
+            document.getElementById('pdf-nama-org-1').textContent = orgName;
+            document.getElementById('pdf-nama-org-2').textContent = orgName;
+            document.getElementById('pdf-nama-sign').textContent = orgName;
+            
+            document.getElementById('pdf-bank').textContent = document.getElementById('input-bank').value;
+            document.getElementById('pdf-nama-akaun').textContent = document.getElementById('input-nama-akaun').value;
+            document.getElementById('pdf-no-akaun').textContent = document.getElementById('input-no-akaun').value;
+            document.getElementById('pdf-no-org').textContent = document.getElementById('input-no-org').value || "-";
+            document.getElementById('pdf-jawatan').textContent = document.getElementById('input-jawatan').value;
+            
+            document.getElementById('pdf-sig-img').src = sigPad.toDataURL("image/png");
+            if(copBase64) document.getElementById('pdf-cop-img').src = copBase64;
+
+            // Show Loader
+            document.getElementById('loader-overlay').classList.remove('hidden');
+            const pdfWrapper = document.getElementById('pdf-template-wrapper');
+            pdfWrapper.style.display = 'block';
+
+            try {
+                // Generate PDF
+                const element = document.getElementById('pdf-content');
+                const opt = {
+                    margin:       0,
+                    filename:     `Borang_Pengesahan_${globalRef}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                const pdfBase64 = await html2pdf().set(opt).from(element).output('datauristring');
+                pdfWrapper.style.display = 'none';
+
+                // Send to Google Apps Script
+                const payload = {
+                    action: "submitPengesahan",
+                    refNo: globalRef,
+                    pdfBase64: pdfBase64,
+                    // TAMBAHAN DATA BANK UNTUK DATABASE:
+                    bankName: document.getElementById('input-bank').value,
+                    bankAccountName: document.getElementById('input-nama-akaun').value,
+                    bankAccountNo: document.getElementById('input-no-akaun').value,
+                    orgNo: document.getElementById('input-no-org').value || "-"
+                };
+
+                const response = await fetch(scriptURL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if(result.status === 'success') {
+                    document.getElementById('form-container').classList.add('hidden');
+                    document.getElementById('success-screen').classList.remove('hidden');
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch(err) {
+                alert("Berlaku ralat: " + err.message);
+                pdfWrapper.style.display = 'none';
+            } finally {
+                document.getElementById('loader-overlay').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
